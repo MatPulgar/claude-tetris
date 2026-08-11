@@ -44,3 +44,5 @@ jobs:
                - Approach sugerido para la solución (sin implementarla — solo diagnóstico y dirección)
 
             No repitas labels que el issue ya tenga. Si el issue no tiene información suficiente para diagnosticar, dilo explícitamente en el comentario y pide los datos que faltan en vez de inventar una causa.
+
+            El comentario debe estar en formato Markdown que GitHub pueda renderizar (encabezados, listas, code spans/blocks para nombres de archivo, funciones y código).

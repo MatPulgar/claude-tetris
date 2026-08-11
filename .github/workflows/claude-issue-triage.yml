@@ -1,0 +1,46 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    if: github.event.issue.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          additional_permissions: |
+            issues: write
+
+          claude_args: '--allowed-tools "Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh issue view:*)"'
+
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} de este repositorio (Tetris en JS vanilla, ver CLAUDE.md para arquitectura de game.js).
+
+            Pasos:
+            1. Lee el título y body del issue con `gh issue view ${{ github.event.issue.number }}`.
+            2. Elige uno o más labels apropiados de este set existente en el repo — NO inventes labels nuevos:
+               bug, documentation, duplicate, enhancement, good first issue, help wanted, invalid, question, wontfix
+            3. Aplica los labels elegidos: `gh issue edit ${{ github.event.issue.number }} --add-label "label1,label2"`
+            4. Postea un comentario de diagnóstico en español con `gh issue comment ${{ github.event.issue.number }} --body "..."` que incluya:
+               - Resumen breve del problema/pedido
+               - Causa probable o análisis técnico, referenciando la arquitectura real de game.js (board, piezas, colisión, loop, scoring/leveling, ghost piece, rendering) según corresponda
+               - Archivos y funciones específicas de game.js/index.html/style.css que habría que tocar
+               - Approach sugerido para la solución (sin implementarla — solo diagnóstico y dirección)
+
+            No repitas labels que el issue ya tenga. Si el issue no tiene información suficiente para diagnosticar, dilo explícitamente en el comentario y pide los datos que faltan en vez de inventar una causa.

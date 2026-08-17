@@ -73,6 +73,17 @@ body {
   letter-spacing: 1px;
 }
 
+#theme-select {
+  background: #22223a;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 12px;
+  padding: 6px 8px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 #next-canvas {
   display: block;
   border: 1px solid #2a2a3a;

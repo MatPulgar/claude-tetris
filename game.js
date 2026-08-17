@@ -15,6 +15,26 @@ const COLORS = [
   '#ffb74d', // L - orange
 ];
 
+// Paleta pastel usada por el tema "pastel" (mismos 7 huesos de tetromino, tonos suaves)
+const PASTEL_COLORS = [
+  null,
+  '#aee7ec', // I - cyan pastel
+  '#fff0b3', // O - amarillo pastel
+  '#dcb8e8', // T - lila pastel
+  '#bfe8c2', // S - verde pastel
+  '#f5bcbc', // Z - rojo pastel
+  '#bfc4ec', // J - índigo pastel
+  '#ffd3ad', // L - naranja pastel
+];
+
+const THEME_KEY = 'tetris-theme';
+let currentTheme = 'retro';
+try {
+  currentTheme = localStorage.getItem(THEME_KEY) || 'retro';
+} catch (e) {
+  currentTheme = 'retro';
+}
+
 const PIECES = [
   null,
   [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
@@ -39,6 +59,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
+const themeSelect = document.getElementById('theme-select');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -158,6 +179,22 @@ function updateHUD() {
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
+  switch (currentTheme) {
+    case 'neon':
+      drawBlockNeon(context, x, y, colorIndex, size, alpha);
+      break;
+    case 'pastel':
+      drawBlockPastel(context, x, y, colorIndex, size, alpha);
+      break;
+    case 'pixel':
+      drawBlockPixel(context, x, y, colorIndex, size, alpha);
+      break;
+    default:
+      drawBlockRetro(context, x, y, colorIndex, size, alpha);
+  }
+}
+
+function drawBlockRetro(context, x, y, colorIndex, size, alpha) {
   const color = COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
   context.fillStyle = color;
@@ -166,6 +203,85 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   context.fillStyle = 'rgba(255,255,255,0.12)';
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
   context.globalAlpha = 1;
+}
+
+function drawBlockNeon(context, x, y, colorIndex, size, alpha) {
+  const color = COLORS[colorIndex];
+  context.save();
+  context.globalAlpha = alpha ?? 1;
+  context.shadowBlur = 14;
+  context.shadowColor = color;
+  context.fillStyle = color;
+  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.shadowBlur = 0;
+  context.fillStyle = 'rgba(255,255,255,0.2)';
+  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.restore();
+}
+
+function drawBlockPastel(context, x, y, colorIndex, size, alpha) {
+  const color = PASTEL_COLORS[colorIndex];
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const w = size - 2;
+  const h = size - 2;
+  const r = Math.min(6, w / 2, h / 2);
+  context.save();
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.beginPath();
+  if (typeof context.roundRect === 'function') {
+    context.roundRect(px, py, w, h, r);
+  } else {
+    context.moveTo(px + r, py);
+    context.arcTo(px + w, py, px + w, py + h, r);
+    context.arcTo(px + w, py + h, px, py + h, r);
+    context.arcTo(px, py + h, px, py, r);
+    context.arcTo(px, py, px + w, py, r);
+    context.closePath();
+  }
+  context.fill();
+  // highlight superior suave
+  context.fillStyle = 'rgba(255,255,255,0.3)';
+  context.beginPath();
+  if (typeof context.roundRect === 'function') {
+    context.roundRect(px, py, w, Math.max(4, h * 0.3), r);
+  } else {
+    context.rect(px, py, w, 4);
+  }
+  context.fill();
+  context.restore();
+}
+
+function drawBlockPixel(context, x, y, colorIndex, size, alpha) {
+  const color = COLORS[colorIndex];
+  const px = x * size + 1;
+  const py = y * size + 1;
+  const w = size - 2;
+  const h = size - 2;
+  context.save();
+  context.globalAlpha = alpha ?? 1;
+  context.fillStyle = color;
+  context.fillRect(px, py, w, h);
+  // textura pixelada: sub-cuadrados con leve variación de brillo/sombra
+  const cell = 3;
+  for (let ry = 0; ry < h; ry += cell) {
+    for (let rx = 0; rx < w; rx += cell) {
+      const variant = (Math.floor(rx / cell) + Math.floor(ry / cell)) % 3;
+      if (variant === 0) {
+        context.fillStyle = 'rgba(255,255,255,0.12)';
+      } else if (variant === 1) {
+        context.fillStyle = 'rgba(0,0,0,0.10)';
+      } else {
+        continue;
+      }
+      context.fillRect(px + rx, py + ry, Math.min(cell, w - rx), Math.min(cell, h - ry));
+    }
+  }
+  context.strokeStyle = 'rgba(0,0,0,0.35)';
+  context.lineWidth = 1;
+  context.strokeRect(px + 0.5, py + 0.5, w - 1, h - 1);
+  context.restore();
 }
 
 function drawGrid() {
@@ -187,6 +303,10 @@ function drawGrid() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (currentTheme === 'neon') {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
   drawGrid();
 
   // board
@@ -210,6 +330,10 @@ function draw() {
 function drawNext() {
   const NB = 30;
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  if (currentTheme === 'neon') {
+    nextCtx.fillStyle = '#000000';
+    nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  }
   const shape = next.shape;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
@@ -300,5 +424,19 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+if (themeSelect) {
+  themeSelect.value = currentTheme;
+  themeSelect.addEventListener('change', () => {
+    currentTheme = themeSelect.value;
+    try {
+      localStorage.setItem(THEME_KEY, currentTheme);
+    } catch (e) {
+      // almacenamiento no disponible; la elección no persiste pero el juego sigue funcionando
+    }
+    draw();
+    drawNext();
+  });
+}
 
 init();

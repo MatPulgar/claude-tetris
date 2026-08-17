@@ -41,6 +41,13 @@
             <li><kbd>P</kbd> pausa</li>
           </ul>
         </div>
+
+        <div class="panel-section records">
+          <span class="label">RECORDS</span>
+          <table id="home-highscores-table" class="highscores-table"></table>
+          <div class="max-lines">Máx. líneas: <span id="home-max-lines">0</span></div>
+          <button id="reset-scores-btn" class="reset-btn">Resetear records</button>
+        </div>
       </aside>
     </div>
 
@@ -49,6 +56,12 @@
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
         <button id="restart-btn">Reiniciar</button>
+        <div id="save-score-section" class="hidden">
+          <input type="text" id="player-name-input" maxlength="12" placeholder="Tu nombre" />
+          <button id="save-score-btn">Guardar</button>
+        </div>
+        <table id="overlay-highscores-table" class="highscores-table"></table>
+        <div class="max-lines">Máx. líneas: <span id="overlay-max-lines">0</span></div>
       </div>
     </div>
   </div>
